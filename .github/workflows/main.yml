@@ -15,8 +15,9 @@ jobs:
         uses: tailscale/github-action@v3
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          args: --accept-routes
 
-      - name: Check Tailscale
+      - name: Check Tailscale Status
         shell: powershell
         run: |
           tailscale status
@@ -29,11 +30,12 @@ jobs:
             exit 1
           }
 
-          Write-Host "Testing RDP connection..."
-          $result = Test-NetConnection -ComputerName $env:TAILSCALE_IP -Port 3389
+          Write-Host "Target IP: $env:TAILSCALE_IP"
+          Write-Host "Testing RDP port 3389..."
+          $result = Test-NetConnection -ComputerName $env:TAILSCALE_IP -Port 3389 -WarningAction SilentlyContinue
 
           if (-not $result.TcpTestSucceeded) {
-            Write-Error "RDP port 3389 is not reachable."
+            Write-Error "RDP port 3389 is not reachable on $env:TAILSCALE_IP."
             exit 1
           }
 
