@@ -1,0 +1,40 @@
+name: Tailscale Connection Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    env:
+      TAILSCALE_IP: ${{ secrets.TAILSCALE_IP }}
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Check Tailscale
+        shell: powershell
+        run: |
+          tailscale status
+
+      - name: Test RDP Connection
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAILSCALE_IP)) {
+            Write-Error "TAILSCALE_IP secret is missing."
+            exit 1
+          }
+
+          Write-Host "Testing RDP connection..."
+          $result = Test-NetConnection -ComputerName $env:TAILSCALE_IP -Port 3389
+
+          if (-not $result.TcpTestSucceeded) {
+            Write-Error "RDP port 3389 is not reachable."
+            exit 1
+          }
+
+          Write-Host "RDP port 3389 is reachable!"
